@@ -1,1 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bulk SPF and CNAME Finder</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; padding-top: 40px; }
+    textarea { width: 80%; height: 150px; font-family: monospace; padding: 10px; margin-bottom: 10px; }
+    button { background-color: #007bff; color: white; padding: 10px 20px; border: none; cursor: pointer; font-weight: bold; }
+    input[type="text"] { margin-top: 20px; padding: 8px; width: 60%; font-size: 16px; }
+    table { margin: 20px auto; border-collapse: collapse; width: 90%; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+    #resultsWrapper { display: none; }
+  </style>
+</head>
+<body>
+  <h2>Bulk SPF and CNAME Finder</h2>
+  <form id="domainForm">
+    <textarea id="domains" placeholder="Enter domains (one per line)"></textarea><br>
+    <button type="submit">Find SPF and CNAME</button>
+  </form>
+  <div id="resultsWrapper">
+    <input type="text" id="search" placeholder="Search domain...">
+    <table id="resultsTable">
+      <thead>
+        <tr><th>Domain</th><th>SPF</th><th>CNAME</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <script>
+    let resultData = {};
+    document.getElementById('domainForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const domains = document.getElementById('domains').value;
+      const res = await fetch('/lookup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domains })
+      });
+      resultData = await res.json();
+      displayResults(resultData);
+    });
+
+    document.getElementById('search').addEventListener('input', (e) => {
+      const filter = e.target.value.toLowerCase();
+      const filtered = Object.fromEntries(
+        Object.entries(resultData).filter(([domain]) => domain.toLowerCase().includes(filter))
+      );
+      displayResults(filtered);
+    });
+
+    function displayResults(data) {
+      const table = document.getElementById('resultsTable').querySelector('tbody');
+      table.innerHTML = '';
+      for (const [domain, { spf, cname }] of Object.entries(data)) {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${domain}</td><td>${spf}</td><td>${cname}</td>`;
+        table.appendChild(row);
+      }
+      document.getElementById('resultsWrapper').style.display = 'block';
+    }
+  </script>
+</body>
+</html>
 
